@@ -1,0 +1,92 @@
+[
+    {
+        "name": "Мука пшеничная высший сорт",
+        "description": "Мука пшеничная хлебопекарная высшего сорта",
+        "unit": "кг",
+        "price_per_unit": 65.50,
+        "calories_per_unit": 334,
+        "stock_quantity": 50,
+        "minimum_stock_level": 20
+    },
+    {
+        "name": "Яйца куриные",
+        "description": "Яйца куриные столовые отборные",
+        "unit": "шт",
+        "price_per_unit": 8.50,
+        "calories_per_unit": 157,
+        "stock_quantity": 240,
+        "minimum_stock_level": 60
+    },
+    {
+        "name": "Молоко 3.2%",
+        "description": "Молоко пастеризованное 3.2% жирности",
+        "unit": "л",
+        "price_per_unit": 89.90,
+        "calories_per_unit": 60,
+        "stock_quantity": 30,
+        "minimum_stock_level": 10
+    },
+    {
+        "name": "Масло сливочное 82.5%",
+        "description": "Масло сливочное несоленое 82.5% жирности",
+        "unit": "кг",
+        "price_per_unit": 850.00,
+        "calories_per_unit": 748,
+        "stock_quantity": 15,
+        "minimum_stock_level": 5
+    },
+    {
+        "name": "Сахар песок",
+        "description": "Сахар песок белый",
+        "unit": "кг",
+        "price_per_unit": 59.90,
+        "calories_per_unit": 387,
+        "stock_quantity": 40,
+        "minimum_stock_level": 15
+    },
+    {
+        "name": "Соль поваренная",
+        "description": "Соль поваренная пищевая экстра",
+        "unit": "кг",
+        "price_per_unit": 25.50,
+        "calories_per_unit": 0,
+        "stock_quantity": 20,
+        "minimum_stock_level": 5
+    },
+    {
+        "name": "Дрожжи свежие",
+        "description": "Дрожжи хлебопекарные прессованные",
+        "unit": "кг",
+        "price_per_unit": 280.00,
+        "calories_per_unit": 325,
+        "stock_quantity": 2,
+        "minimum_stock_level": 0.5
+    },
+    {
+        "name": "Сметана 20%",
+        "description": "Сметана из нормализованных сливок 20% жирности",
+        "unit": "кг",
+        "price_per_unit": 320.00,
+        "calories_per_unit": 206,
+        "stock_quantity": 10,
+        "minimum_stock_level": 3
+    },
+    {
+        "name": "Томаты свежие",
+        "description": "Томаты свежие тепличные красные",
+        "unit": "кг",
+        "price_per_unit": 189.90,
+        "calories_per_unit": 24,
+        "stock_quantity": 25,
+        "minimum_stock_level": 8
+    },
+    {
+        "name": "Огурцы свежие",
+        "description": "Огурцы свежие тепличные короткоплодные",
+        "unit": "кг",
+        "price_per_unit": 169.90,
+        "calories_per_unit": 15,
+        "stock_quantity": 20,
+        "minimum_stock_level": 7
+    }
+]

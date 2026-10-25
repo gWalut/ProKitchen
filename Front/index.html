@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ProKitchen — Ассистент повара</title>
+
+    <!-- Primary SEO -->
+    <meta name="description"
+        content="ProKitchen — профессиональный помощник повара: калькулятор себестоимости блюд, матрица аллергенов, печать этикеток и управление рецептами." />
+    <meta name="keywords"
+        content="калькулятор себестоимости блюд, матрица аллергенов, помощник повара, рецепты, этикетки" />
+    <meta name="author" content="ProKitchen" />
+    <meta name="robots" content="index, follow" />
+    <link rel="canonical" href="https://prokitchen.app/" />
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://prokitchen.app/" />
+    <meta property="og:title" content="ProKitchen — Ассистент повара" />
+    <meta property="og:description"
+        content="Профессиональный помощник повара: калькулятор себестоимости, аллергены, этикетки." />
+    <meta property="og:image" content="https://prokitchen.app/og-image.png" />
+    <meta property="og:locale" content="ru_RU" />
+    <meta property="og:site_name" content="ProKitchen" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="ProKitchen — Ассистент повара" />
+    <meta name="twitter:description"
+        content="Профессиональный помощник повара: калькулятор себестоимости, аллергены, этикетки." />
+    <meta name="twitter:image" content="https://prokitchen.app/og-image.png" />
+
+    <!-- Preconnect для ускорения загрузки шрифтов -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+    <!-- JSON-LD: WebSite -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "ProKitchen",
+      "url": "https://prokitchen.app",
+      "description": "Профессиональный ассистент повара",
+      "inLanguage": "ru",
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": "https://prokitchen.app/allergens?q={search_term_string}",
+        "query-input": "required name=search_term_string"
+      }
+    }
+    </script>
+</head>
+
+<body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+</body>
+
+</html>

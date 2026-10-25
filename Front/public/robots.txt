@@ -1,0 +1,19 @@
+User-agent: *
+Allow: /
+Allow: /allergens
+Allow: /calc
+Allow: /privacy
+
+# Закрытые/служебные маршруты — запрет индексации
+Disallow: /admin/
+Disallow: /settings
+Disallow: /favorites
+Disallow: /labels
+Disallow: /login
+Disallow: /register
+Disallow: /hello
+Disallow: /custom-dishes/
+Disallow: /api/
+
+# Sitemap
+Sitemap: https://prokitchen.app/sitemap.xml

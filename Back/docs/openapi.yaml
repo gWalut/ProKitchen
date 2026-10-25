@@ -1,0 +1,571 @@
+openapi: 3.0.3
+info:
+  title: ProKitchen API
+  description: API для системы управления профессиональной кухней
+  version: 1.0.0
+
+servers:
+  - url: /api/v1
+    description: Основной API сервер
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+          example: ValidationError
+        message:
+          type: string
+          example: Ошибка валидации
+        details:
+          type: array
+          items:
+            type: object
+            properties:
+              field:
+                type: string
+              message:
+                type: string
+
+    TokenResponse:
+      type: object
+      properties:
+        message:
+          type: string
+        data:
+          type: object
+          properties:
+            accessToken:
+              type: string
+            refreshToken:
+              type: string
+            expiresAt:
+              type: string
+              format: date-time
+
+    LoginRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 6
+
+    RegisterRequest:
+      allOf:
+        - $ref: '#/components/schemas/LoginRequest'
+        - type: object
+          required:
+            - fullName
+          properties:
+            fullName:
+              type: string
+              minLength: 2
+
+    Ingredient:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        description:
+          type: string
+        unit:
+          type: string
+          enum: [г, кг, мл, л, шт, уп]
+        price_per_unit:
+          type: number
+        calories_per_unit:
+          type: integer
+        stock_quantity:
+          type: number
+        minimum_stock_level:
+          type: number
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    Dish:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        description:
+          type: string
+        instructions:
+          type: string
+        cooking_time:
+          type: integer
+        difficulty_level:
+          type: string
+          enum: [easy, medium, hard]
+        portion_size:
+          type: integer
+        cost_per_portion:
+          type: number
+        is_published:
+          type: boolean
+        created_by:
+          type: integer
+        ingredients:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: integer
+              quantity:
+                type: number
+
+    PaginationParams:
+      type: object
+      properties:
+        page:
+          type: integer
+          minimum: 1
+          default: 1
+        limit:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 20
+
+paths:
+  /auth/register:
+    post:
+      tags:
+        - Аутентификация
+      summary: Регистрация нового пользователя
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '201':
+          description: Пользователь зарегистрирован
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenResponse'
+        '400':
+          description: Ошибка валидации
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /auth/login:
+    post:
+      tags:
+        - Аутентификация
+      summary: Вход в систему
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Успешный вход
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenResponse'
+        '401':
+          description: Неверные учетные данные
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /auth/refresh:
+    post:
+      tags:
+        - Аутентификация
+      summary: Обновление токенов
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - refreshToken
+              properties:
+                refreshToken:
+                  type: string
+      responses:
+        '200':
+          description: Токены обновлены
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenResponse'
+
+  /auth/change-password:
+    post:
+      tags:
+        - Аутентификация
+      summary: Смена пароля
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - currentPassword
+                - newPassword
+              properties:
+                currentPassword:
+                  type: string
+                  description: Текущий пароль пользователя
+                newPassword:
+                  type: string
+                  minLength: 8
+                  description: Новый пароль (минимум 8 символов)
+      responses:
+        '200':
+          description: Пароль успешно изменен
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Пароль успешно изменен
+                  data:
+                    type: object
+                    properties:
+                      success:
+                        type: boolean
+                        example: true
+        '401':
+          description: Неверный текущий пароль или пользователь не авторизован
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '400':
+          description: Ошибка валидации
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /ingredients:
+    get:
+      tags:
+        - Ингредиенты
+      summary: Получение списка ингредиентов
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        '200':
+          description: Список ингредиентов
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Ingredient'
+                  pagination:
+                    $ref: '#/components/schemas/PaginationParams'
+
+    post:
+      tags:
+        - Ингредиенты
+      summary: Создание нового ингредиента
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Ingredient'
+      responses:
+        '201':
+          description: Ингредиент создан
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+
+  /dishes:
+    get:
+      tags:
+        - Блюда
+      summary: Получение списка блюд
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - in: query
+          name: difficulty
+          schema:
+            type: string
+            enum: [easy, medium, hard]
+      responses:
+        '200':
+          description: Список блюд
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Dish'
+                  pagination:
+                    $ref: '#/components/schemas/PaginationParams'
+
+  /dishes/{id}/calculate:
+    get:
+      tags:
+        - Блюда
+      summary: Расчет стоимости блюда
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+        - in: query
+          name: portions
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+      responses:
+        '200':
+          description: Результат расчета
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      totalCost:
+                        type: number
+                      costPerPortion:
+                        type: number
+                      breakdown:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            ingredientId:
+                              type: integer
+                            name:
+                              type: string
+                            quantity:
+                              type: number
+                            cost:
+                              type: number
+
+  /dishes/{id}/label:
+    get:
+      tags:
+        - Блюда
+      summary: Генерация PDF этикетки
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: PDF этикетка
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+
+  /favorites:
+    get:
+      tags:
+        - Избранное
+      summary: Получение списка избранных блюд
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Список избранных блюд
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Dish'
+
+    post:
+      tags:
+        - Избранное
+      summary: Добавление блюда в избранное
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - dishId
+              properties:
+                dishId:
+                  type: integer
+      responses:
+        '200':
+          description: Блюдо добавлено в избранное
+
+  /actions:
+    get:
+      tags:
+        - Действия
+      summary: Получение истории действий
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - in: query
+          name: entityType
+          schema:
+            type: string
+            enum: [USER, DISH, INGREDIENT]
+        - in: query
+          name: entityId
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: История действий
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: integer
+                        userId:
+                          type: integer
+                        actionType:
+                          type: string
+                        entityType:
+                          type: string
+                        entityId:
+                          type: integer
+                        details:
+                          type: object
+                        created_at:
+                          type: string
+                          format: date-time
+                  pagination:
+                    $ref: '#/components/schemas/PaginationParams'
+
+security:
+  - bearerAuth: []
+
+tags:
+  - name: Аутентификация
+    description: Endpoints для регистрации и авторизации
+  - name: Ингредиенты
+    description: Управление ингредиентами
+  - name: Блюда
+    description: Управление рецептами и блюдами
+  - name: Избранное
+    description: Работа с избранными блюдами
+  - name: Действия
+    description: История действий пользователей
