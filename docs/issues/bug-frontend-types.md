@@ -1,6 +1,6 @@
 # Не проходит проверка типов и линтер фронтенда
 
-Предлагаемая метка: bug. Статус: требуется создание issue в новом репозитории.
+Предлагаемая метка: bug. Issue: https://github.com/gWalut/ProKitchen/issues/2. Статус: открыто.
 
 Воспроизведение: после npm run setup выполнить npm --prefix Front run type-check и npm --prefix Front run lint.
 

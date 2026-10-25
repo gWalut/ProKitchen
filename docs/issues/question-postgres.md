@@ -1,6 +1,6 @@
 # Определить объём поддержки PostgreSQL и Docker
 
-Предлагаемая метка: question. Статус: требуется создание issue в новом репозитории.
+Предлагаемая метка: question. Issue: https://github.com/gWalut/ProKitchen/issues/4. Статус: открыто.
 
 Локальный подтверждённый сценарий лабораторной работы использует SQLite. В репозитории также есть Compose с PostgreSQL, но custom_dishes и shared_favorites имеют SQLite-миграции, а модель refresh-токенов использует datetime('now'). Скрипт migrate теперь явно отказывается применять SQLite-миграции к PostgreSQL.
 
