@@ -25,3 +25,18 @@ jobs:
       - run: npm test
       - run: npm run check
       - run: npm run build
+      - name: Check combined startup
+        shell: bash
+        run: |
+          setsid npm run dev > "$RUNNER_TEMP/prokitchen-startup.log" 2>&1 &
+          lab_dev_pid=$!
+          trap 'kill -- -"$lab_dev_pid" 2>/dev/null || true' EXIT
+          for lab_attempt in {1..30}; do
+            if curl --fail --silent http://127.0.0.1:5173/api/v1/health > "$RUNNER_TEMP/prokitchen-health.json" && curl --fail --silent http://127.0.0.1:5173/ > "$RUNNER_TEMP/prokitchen-index.html"; then
+              cat "$RUNNER_TEMP/prokitchen-health.json"
+              exit 0
+            fi
+            sleep 1
+          done
+          cat "$RUNNER_TEMP/prokitchen-startup.log"
+          exit 1
