@@ -13,6 +13,8 @@ const errorHandler = require('./shared/middleware/error-handler');
 const { notFoundHandler } = require('./shared/middleware/error-handler');
 const { RateLimiter } = require('./shared/middleware/rate-limiter');
 const rateLimiter = new RateLimiter().middleware();
+const db = require('./shared/database/db');
+const config = require('./config/config');
 
 dotenv.config();
 
@@ -20,7 +22,7 @@ const app = express();
 
 // CORS configuration
 const corsOptions = {
-    origin: ['http://localhost:5173', 'http://localhost:5174', 'http://localhost:3000'],
+    origin: config.CORS_ORIGINS,
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
@@ -35,8 +37,13 @@ app.get('/', (req, res) => {
     res.json({ status: 'ok', message: 'API is running' });
 });
 
-app.get('/api/v1/health', (req, res) => {
-    res.json({ status: 'ok', message: 'API is healthy', timestamp: new Date().toISOString() });
+app.get('/api/v1/health', async (req, res) => {
+    const ready = await db.healthCheck();
+    res.status(ready ? 200 : 503).json({
+        status: ready ? 'ok' : 'error',
+        database: ready ? 'ok' : 'unavailable',
+        timestamp: new Date().toISOString()
+    });
 });
 
 // SEO: sitemap.xml и robots.txt (без /api/v1 — стандартные пути)
@@ -58,12 +65,5 @@ app.use(notFoundHandler);
 // Error handling
 app.use(errorHandler);
 
-const PORT = process.env.PORT || 3000;
-const HOST = process.env.HOST || '0.0.0.0';
-
-const server = app.listen(PORT, HOST, () => {
-    console.log(`Server is running on http://${HOST}:${PORT}`);
-    console.log(`Health check: http://localhost:${PORT}/api/v1/health`);
-});
-
-module.exports = { app, server };
+// Importing the application must not open a listening socket (e.g. in tests).
+module.exports = { app };

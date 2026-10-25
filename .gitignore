@@ -48,3 +48,10 @@ coverage/
 *.tmp
 temp/
 tmp/
+
+# Local verification artifacts and duplicate root font downloads
+playwright-report/
+test-results/
+/dejavu.tar.bz2
+/DejaVuSans.ttf
+/DejaVuSans-Bold.ttf

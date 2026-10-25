@@ -26,6 +26,7 @@ module.exports = {
 
     // Файлы настройки окружения
     setupFiles: ['<rootDir>/tests/setup.js'],
+    setupFilesAfterEnv: ['<rootDir>/tests/lifecycle.js'],
 
     // Тайм-аут для тестов
     testTimeout: 10000,

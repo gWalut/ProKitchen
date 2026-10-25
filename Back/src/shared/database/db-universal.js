@@ -180,12 +180,11 @@ class DB {
             await this.pool.end();
             logger.info('PostgreSQL pool closed');
         } else if (this.db) {
-            this.db.close((err) => {
-                if (err) {
-                    logger.error('Error closing SQLite database:', err);
-                } else {
-                    logger.info('SQLite database closed');
-                }
+            await new Promise((resolve, reject) => {
+                this.db.close(err => {
+                    if (err) reject(err);
+                    else { logger.info('SQLite database closed'); resolve(); }
+                });
             });
         }
     }
