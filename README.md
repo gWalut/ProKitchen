@@ -4,17 +4,13 @@
 
 ## Структура Бека
 
-Back/
-│
-├── 📄 Dockerfile                      # Docker-образ для бэкенда
-├── 📄 package.json                    # Зависимости и скрипты (Express, JWT, PostgreSQL/SQLite)
-├── 📄 jest.config.js                  # Настройки тестирования Jest
-│
-├── 📂 src/                            # Исходный код приложения
-│   ├── 📄 app.js                      # Главный файл приложения Express
-│   │
-│   ├── 📂 config/                     # Конфигурация приложения
-│   │   └── config.js                  # Настройки БД, JWT, переменные окружения
+Dockerfile                      # Docker-образ для бэкенда
+package.json                    # Зависимости и скрипты (Express, JWT, PostgreSQL/SQLite)
+jest.config.js                  # Настройки тестирования Jest
+src/                            # Исходный код приложения
+app.js                      # Главный файл приложения Express
+config/                     # Конфигурация приложения
+config.js                  # Настройки БД, JWT, переменные окружения
 │   │
 │   ├── 📂 features/                   # Модули по функциональности (Feature-based архитектура)
 │   │   ├── 📂 action-logs/            # Логирование действий пользователей
