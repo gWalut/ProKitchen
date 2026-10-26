@@ -1,45 +1,45 @@
 # Build stage
-FROM node:20-alpine AS builder
+FROM node:22.20.0-alpine AS builder
 
 WORKDIR /app
 
-# Š®¯¨àã¥¬ package ä ©«ë
+# ï¿½ï¿½ï¿½ï¿½ï¿½ã¥¬ package ä ©ï¿½ï¿½
 COPY package*.json download-fonts.js ./
 
-# “áâ ­ ¢«¨¢ ¥¬ § ¢¨á¨¬®áâ¨
+# ï¿½ï¿½â ­ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½á¨¬ï¿½ï¿½ï¿½
 RUN npm ci --only=production
 
 # Production stage
-FROM node:20-alpine
+FROM node:22.20.0-alpine
 
 WORKDIR /app
 
-# “áâ ­ ¢«¨¢ ¥¬ wget ¤«ï healthcheck
+# ï¿½ï¿½â ­ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ wget ï¿½ï¿½ï¿½ healthcheck
 RUN apk add --no-cache wget
 
-# ‘®§¤ ¥¬ ¯®«ì§®¢ â¥«ï ¤«ï ¡¥§®¯ á­®áâ¨
+# ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ì§®ï¿½ï¿½â¥«ï¿½ ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½á­®ï¿½ï¿½
 RUN addgroup -g 1001 -S nodejs && \
     adduser -S nodejs -u 1001
 
-# Š®¯¨àã¥¬ § ¢¨á¨¬®áâ¨ ¨§ builder
+# ï¿½ï¿½ï¿½ï¿½ï¿½ã¥¬ ï¿½ï¿½ï¿½ï¿½á¨¬ï¿½ï¿½ï¿½ ï¿½ï¿½ builder
 COPY --from=builder /app/node_modules ./node_modules
 
-# Š®¯¨àã¥¬ ¨áå®¤­ë© ª®¤
+# ï¿½ï¿½ï¿½ï¿½ï¿½ã¥¬ ï¿½ï¿½å®¤ï¿½ï¿½ ï¿½ï¿½ï¿½
 COPY --chown=nodejs:nodejs . .
 
-# ‘®§¤ ¥¬ ­¥®¡å®¤¨¬ë¥ ¤¨à¥ªâ®à¨¨
+# ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½å®¤ï¿½ï¿½ï¿½ ï¿½ï¿½à¥ªï¿½à¨¨
 RUN mkdir -p /app/logs /app/data && \
     chown -R nodejs:nodejs /app/logs /app/data
 
-# ¥à¥ª«îç ¥¬áï ­  ­¥¯à¨¢¨«¥£¨à®¢ ­­®£® ¯®«ì§®¢ â¥«ï
+# ï¿½ï¿½à¥ªï¿½ï¿½ç ¥ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½à¨¢ï¿½ï¿½ï¿½ï¿½ï¿½à®¢ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ì§®ï¿½ï¿½â¥«ï¿½
 USER nodejs
 
-# Žâªàë¢ ¥¬ ¯®àâ
+# ï¿½ï¿½ï¿½ë¢ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
 EXPOSE 3000
 
 # Healthcheck
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD node -e "require('http').get('http://localhost:3000/', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
+    CMD node -e "require('http').get('http://localhost:3000/api/v1/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
 
-# ‡ ¯ãáª ¯à¨«®¦¥­¨ï
-CMD ["node", "src/app.js"]
+# ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½à¨«ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+CMD ["node", "src/server.js"]

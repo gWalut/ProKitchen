@@ -11,7 +11,8 @@ class RateLimiter {
         this.store = new Map();
 
         // Периодическая очистка старых записей
-        setInterval(() => this.cleanup(), this.windowMs);
+        this.cleanupTimer = setInterval(() => this.cleanup(), this.windowMs);
+        this.cleanupTimer.unref();
     }
 
     cleanup() {

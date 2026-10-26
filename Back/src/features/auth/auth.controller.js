@@ -87,11 +87,11 @@ class AuthController {
             const { currentPassword, newPassword } = req.body;
             const userId = req.user.id;
 
-            await authService.changePassword(userId, currentPassword, newPassword);
+            const result = await authService.changePassword(userId, currentPassword, newPassword);
 
             res.json({
                 message: 'Пароль успешно изменен',
-                data: { user: result.user, success: true }
+                data: result
             });
         } catch (error) {
             next(error);

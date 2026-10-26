@@ -127,7 +127,9 @@ describe('Change Password API', () => {
                 });
 
             expect(response.status).toBe(400);
-            expect(response.body.message).toContain('8 символов');
+            expect(response.body.details).toEqual(expect.arrayContaining([
+                expect.objectContaining({ field: 'newPassword', message: expect.stringContaining('8 символов') })
+            ]));
         });
 
         it('должен вернуть 401 без авторизации', async () => {
