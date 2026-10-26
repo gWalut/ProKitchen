@@ -1,0 +1,29 @@
+@startuml
+!pragma layout smetana
+title Пользовательское блюдо — целевые состояния процесса
+skinparam defaultFontName SansSerif
+skinparam shadowing false
+state "Черновик в клиенте" as Draft
+state "Расчёт актуален" as Calculated
+state "Сохранено в SQLite" as Saved
+state "Изменения не сохранены" as Edited
+[*] --> Draft : открыть калькулятор после входа
+Draft --> Calculated : корректный расчёт\nFR-2 / US-2
+Calculated --> Draft : изменить состав или N\nинвалидировать расчёт
+Calculated --> Saved : сохранить с сессией\nFR-3 / US-3
+Calculated --> Calculated : ошибка сохранения\nзапись не создана
+Saved --> Saved : прочитать / скачать PDF\nFR-4, FR-5 / US-4, US-5
+Saved --> Edited : изменить своё блюдо\nFR-4 / US-4
+Edited --> Saved : пересчитать и сохранить\nFR-2, FR-4
+Edited --> Saved : отменить изменения
+Saved --> [*] : удалить своё блюдо\nFR-4 / US-4
+note bottom of Draft
+Состояния процесса не являются полем status.
+Черновик и расчёт живут в памяти клиента.
+end note
+note bottom of Edited
+Целевая инвалидация и единый пересчёт
+пока реализованы не полностью.
+Сохранённая версия существует до успеха изменения.
+end note
+@enduml

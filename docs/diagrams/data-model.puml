@@ -1,0 +1,59 @@
+@startuml
+!pragma layout smetana
+title ProKitchen — текущая модель данных из пяти сущностей
+skinparam defaultFontName SansSerif
+skinparam shadowing false
+hide methods
+class "Пользователь" as User {
+  id : INTEGER PK
+  email : VARCHAR UNIQUE
+  password_hash : VARCHAR
+  full_name : VARCHAR
+  role : user | admin
+}
+class "Пользовательское блюдо" as CustomDish {
+  id : INTEGER PK
+  user_id : INTEGER FK
+  name : VARCHAR
+  description : TEXT
+  portions : INTEGER
+  ingredients_json : позиции состава[]
+  total_cost : DECIMAL
+  cost_per_portion : DECIMAL
+  updated_at : DATETIME
+}
+class "Блюдо каталога" as Dish {
+  id : INTEGER PK
+  created_by : INTEGER FK nullable
+  name : VARCHAR UNIQUE
+  instructions : TEXT
+  portion_size : INTEGER
+  cooking_time : INTEGER
+  is_published : BOOLEAN
+}
+class "Ингредиент" as Ingredient {
+  id : INTEGER PK
+  name : VARCHAR UNIQUE
+  unit : VARCHAR
+  price_per_unit : DECIMAL
+}
+class "Аллерген" as Allergen {
+  id : INTEGER PK
+  name : VARCHAR UNIQUE
+  description : TEXT
+}
+User "1" -- "0..*" CustomDish : владеет / user_id
+User "0..1" -- "0..*" Dish : создаёт / created_by
+Dish "0..*" -- "0..*" Ingredient : dish_ingredients\nquantity
+Ingredient "0..*" -- "0..*" Allergen : ingredient_allergens
+note bottom of CustomDish
+Позиция состава = name, weight, unit, pricePerUnit.
+Снимок в JSON, не FK на ingredients.
+Нет прямой связи с аллергенами.
+end note
+note bottom of Dish
+Две таблицы блюд не объединены.
+Связующие таблицы указаны на отношениях.
+Этикетка — PDF, а не сущность labels (теги).
+end note
+@enduml

@@ -1,0 +1,34 @@
+@startuml
+!pragma layout smetana
+title ProKitchen — варианты использования
+skinparam defaultFontName SansSerif
+skinparam shadowing false
+left to right direction
+actor "Пользователь\nuser" as user
+actor "Администратор\nadmin" as admin
+admin --|> user
+rectangle "ProKitchen" {
+  usecase "FR-1 / US-1\nРегистрация и вход\n[уже есть]" as auth
+  usecase "FR-2 / US-2\nРасчёт себестоимости\n[нужно доработать]" as calc
+  usecase "FR-3 / US-3\nСохранение личного блюда\n[нужно доработать]" as save
+  usecase "FR-4 / US-4\nПоиск, изменение, удаление своего блюда\n[нужно доработать]" as own
+  usecase "FR-5 / US-5\nСкачивание PDF своего блюда\n[уже есть]" as pdf
+  usecase "FR-6 / US-6\nАллергены блюда каталога\n[нужно доработать]" as allergy
+  usecase "FR-7 / US-7\nСправочник в калькуляторе\n[нужно доработать]" as ingredient
+  usecase "FR-8 / US-8\nСписок пользователей и роли\n[уже есть]" as roles
+  usecase "FR-9 / US-9\nЛичное избранное каталога\n[нужно сделать, потом]" as favorites
+}
+user --> auth
+user --> calc
+user --> save
+user --> own
+user --> pdf
+user --> allergy
+user ..> ingredient : целевой полный сценарий
+user ..> favorites : запланировано
+admin --> roles
+note bottom of favorites
+Текущее общее API избранного не выполняет FR-9.
+Экран /favorites показывает личные рецептуры.
+end note
+@enduml

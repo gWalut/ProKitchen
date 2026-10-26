@@ -1,0 +1,36 @@
+@startuml
+title US-3 / FR-3 — текущее успешное сохранение
+skinparam defaultFontName SansSerif
+skinparam shadowing false
+actor "Пользователь A" as user
+participant "Калькулятор" as ui
+participant "API /custom-dishes" as api
+participant "Auth + Joi" as validation
+participant "CustomDishesController\nCustomDishesModel" as model
+database "SQLite" as db
+user -> ui : Сохранить рассчитанное блюдо
+ui -> api : POST /api/v1/custom-dishes\nBearer, name, portions, ingredients, costs
+api -> validation : Проверить JWT и схему полей
+validation --> api : req.user.id + допустимые данные
+api -> model : create(req.user.id, body)
+note right of model
+Сейчас суммы берутся от клиента.
+Проверка их согласованности —
+целевая доработка FR-3.
+end note
+model -> db : INSERT custom_dishes\nuser_id=A, ingredients_json, costs
+db --> model : id
+model -> db : SELECT созданного блюда
+db --> model : запись
+model --> api : блюдо
+api --> ui : 201, data.id и поля
+ui --> user : «Блюдо сохранено в избранное!»
+user -> ui : Открыть «Избранное»
+ui -> api : GET /api/v1/custom-dishes + Bearer
+api -> model : getByUserId(A)
+model -> db : SELECT WHERE user_id=A
+db --> model : личный список
+model --> api : список
+api --> ui : 200, data[]
+ui --> user : Карточка сохранённого блюда
+@enduml
