@@ -1,0 +1,35 @@
+@startuml
+title US-5 / FR-5 — PDF и ошибка входных данных
+skinparam defaultFontName SansSerif
+skinparam shadowing false
+actor "Владелец блюда" as user
+participant "Экран этикеток\nили API-клиент" as ui
+participant "API + Auth + Joi" as api
+participant "CustomDishesController" as controller
+database "SQLite" as db
+participant "PDFKit / PdfService" as pdf
+user -> ui : Блюдо, вес, дата, срок в днях
+alt Все поля корректны, сессия действительна
+  ui -> api : GET /api/v1/custom-dishes/{id}/label\nweight=200&manufactureDate=2026-10-26&shelfLife=2
+  api -> controller : generateLabel(req)
+  controller -> db : Получить блюдо по id
+  db --> controller : user_id, name, portions, ingredients
+  controller -> controller : Проверить владельца\nВычислить 28.10.2026 и вес порции 100 г
+  controller -> pdf : generateLabel(labelData)
+  pdf --> controller : PDF buffer
+  controller --> api : PDF
+  api --> ui : 200 application/pdf
+  ui --> user : Скачать PDF
+else Вес отсутствует в форме
+  ui --> user : «Заполните все поля!»
+  note over ui,api : HTTP-запрос не отправляется
+else Прямой API-запрос без weight
+  ui -> api : GET .../label?manufactureDate=2026-10-26&shelfLife=2
+  api --> ui : 400, «Ошибка валидации»\ndetails.field = weight
+  note over controller,pdf : Контроллер и PDFKit не вызываются
+end
+note over api,controller
+С полными параметрами чужое существующее блюдо:
+403, «Access denied»; PDF не создаётся (NFR-2).
+end note
+@enduml

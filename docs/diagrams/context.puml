@@ -1,0 +1,31 @@
+@startuml
+!pragma layout smetana
+title ProKitchen — контекст текущей системы
+skinparam defaultFontName SansSerif
+skinparam shadowing false
+left to right direction
+actor "Пользователь\nuser" as user
+actor "Администратор\nadmin" as admin
+rectangle "ProKitchen\nграница системы" {
+  rectangle "Веб-интерфейс\nReact / TypeScript" as web
+  rectangle "API\nExpress" as api
+  database "SQLite\nлокальные данные" as db
+  web --> api : /api/v1
+  api --> db : данные и миграции
+}
+cloud "Spoonacular\nнеобязательное питание" as external
+artifact "PDF-файл\nна устройстве пользователя" as pdf
+user --> web : регистрация, вход, расчёт,\nблюда, PDF, каталог\nFR-1–FR-7
+admin --> web : пользователи и роли\nFR-8
+api --> external : запрос питания\nтолько при наличии ключа
+api --> web : PDF по запросу US-5
+web --> pdf : скачать
+note bottom of pdf
+Печать — последующее ручное действие.
+Прямого подключения к принтеру нет.
+end note
+note bottom of external
+Сбой не блокирует расчёт стоимости.
+NFR-1; отдельного FR на питание нет.
+end note
+@enduml
