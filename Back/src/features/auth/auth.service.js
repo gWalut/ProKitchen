@@ -148,7 +148,7 @@ class AuthService {
 
     // Отзыв refresh токена
     async revokeRefresh(token) {
-        const result = refreshTokensModel.deleteToken(token);
+        const result = await refreshTokensModel.deleteToken(token);
         return result.changes > 0;
     }
 

@@ -2,7 +2,7 @@ const dotenv = require('dotenv');
 const path = require('path');
 
 // Загрузка .env файла
-dotenv.config();
+dotenv.config({ path: path.join(__dirname, '../../.env') });
 
 const config = {
     // Основные настройки сервера
@@ -31,7 +31,8 @@ const config = {
     // CORS настройки
     CORS_ORIGINS: process.env.CORS_ORIGINS
         ? process.env.CORS_ORIGINS.split(',')
-        : ['http://localhost:3000', 'http://localhost:5173', 'http://localhost:5174'],
+        : ['http://localhost:3000', 'http://localhost:5173', 'http://localhost:5174',
+            'http://127.0.0.1:5173', 'http://127.0.0.1:5174'],
 };
 
 // Проверка обязательных переменных в production

@@ -1,35 +1,35 @@
 # Build stage
-FROM node:20-alpine AS builder
+FROM node:22.20.0-alpine AS builder
 
 WORKDIR /app
 
-# Копируем package файлы
+# я┐╜я┐╜я┐╜я┐╜я┐╜уем package файя┐╜я┐╜
 COPY package*.json ./
 
-# Устанавливаем зависимости
+# я┐╜я┐╜таня┐╜я┐╜я┐╜я┐╜я┐╜я┐╜я┐╜я┐╜ я┐╜я┐╜я┐╜я┐╜симя┐╜я┐╜я┐╜
 RUN npm ci
 
-# Копируем исходный код
+# я┐╜я┐╜я┐╜я┐╜я┐╜уем я┐╜я┐╜ходя┐╜я┐╜ я┐╜я┐╜я┐╜
 COPY . .
 
-# Собираем production build
+# я┐╜я┐╜я┐╜я┐╜раея┐╜ production build
 RUN npm run build
 
 # Production stage
 FROM nginx:alpine
 
-# Копируем собранные файлы
+# я┐╜я┐╜я┐╜я┐╜я┐╜уем собраня┐╜я┐╜ файя┐╜я┐╜
 COPY --from=builder /app/dist /usr/share/nginx/html
 
-# Копируем конфигурацию nginx
+# я┐╜я┐╜я┐╜я┐╜я┐╜уем я┐╜я┐╜я┐╜фигя┐╜я┐╜я┐╜я┐╜ nginx
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-# Открываем порт
+# я┐╜я┐╜я┐╜ывая┐╜я┐╜ я┐╜я┐╜я┐╜я┐╜
 EXPOSE 80
 
 # Healthcheck
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD wget -q --spider http://localhost:80 || exit 1
 
-# Запуск nginx
+# я┐╜я┐╜я┐╜я┐╜я┐╜ nginx
 CMD ["nginx", "-g", "daemon off;"]

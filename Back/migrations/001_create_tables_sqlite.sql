@@ -1,18 +1,5 @@
--- Удаляем старые таблицы если они есть
-DROP TABLE IF EXISTS dish_labels;
-DROP TABLE IF EXISTS dish_ingredients;
-DROP TABLE IF EXISTS ingredient_allergens;
-DROP TABLE IF EXISTS favorites;
-DROP TABLE IF EXISTS labels;
-DROP TABLE IF EXISTS action_logs;
-DROP TABLE IF EXISTS refresh_tokens;
-DROP TABLE IF EXISTS dishes;
-DROP TABLE IF EXISTS allergens;
-DROP TABLE IF EXISTS ingredients;
-DROP TABLE IF EXISTS users;
-
 -- Создание таблицы пользователей
-CREATE TABLE users (
+CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     email VARCHAR(255) NOT NULL UNIQUE,
     password_hash VARCHAR(255) NOT NULL,
@@ -23,7 +10,7 @@ CREATE TABLE users (
 );
 
 -- Создание таблицы ингредиентов
-CREATE TABLE ingredients (
+CREATE TABLE IF NOT EXISTS ingredients (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name VARCHAR(255) NOT NULL UNIQUE,
     description TEXT,
@@ -37,7 +24,7 @@ CREATE TABLE ingredients (
 );
 
 -- Создание таблицы аллергенов
-CREATE TABLE allergens (
+CREATE TABLE IF NOT EXISTS allergens (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name VARCHAR(255) NOT NULL UNIQUE,
     description TEXT,
@@ -45,7 +32,7 @@ CREATE TABLE allergens (
 );
 
 -- Связь ингредиентов и аллергенов
-CREATE TABLE ingredient_allergens (
+CREATE TABLE IF NOT EXISTS ingredient_allergens (
     ingredient_id INTEGER,
     allergen_id INTEGER,
     PRIMARY KEY (ingredient_id, allergen_id),
@@ -54,7 +41,7 @@ CREATE TABLE ingredient_allergens (
 );
 
 -- Создание таблицы блюд
-CREATE TABLE dishes (
+CREATE TABLE IF NOT EXISTS dishes (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name VARCHAR(255) NOT NULL UNIQUE,
     description TEXT,
@@ -71,7 +58,7 @@ CREATE TABLE dishes (
 );
 
 -- Связь блюд и ингредиентов
-CREATE TABLE dish_ingredients (
+CREATE TABLE IF NOT EXISTS dish_ingredients (
     dish_id INTEGER,
     ingredient_id INTEGER,
     quantity DECIMAL(10, 2) NOT NULL,
@@ -81,7 +68,7 @@ CREATE TABLE dish_ingredients (
 );
 
 -- Таблица избранных блюд
-CREATE TABLE favorites (
+CREATE TABLE IF NOT EXISTS favorites (
     user_id INTEGER,
     dish_id INTEGER,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -91,7 +78,7 @@ CREATE TABLE favorites (
 );
 
 -- Таблица меток (тегов)
-CREATE TABLE labels (
+CREATE TABLE IF NOT EXISTS labels (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name VARCHAR(255) NOT NULL UNIQUE,
     color VARCHAR(7) DEFAULT '#000000',
@@ -99,7 +86,7 @@ CREATE TABLE labels (
 );
 
 -- Связь блюд и меток
-CREATE TABLE dish_labels (
+CREATE TABLE IF NOT EXISTS dish_labels (
     dish_id INTEGER,
     label_id INTEGER,
     PRIMARY KEY (dish_id, label_id),
@@ -108,7 +95,7 @@ CREATE TABLE dish_labels (
 );
 
 -- Таблица логов действий (без внешнего ключа на user_id)
-CREATE TABLE action_logs (
+CREATE TABLE IF NOT EXISTS action_logs (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER,
     action_type VARCHAR(50) NOT NULL,
@@ -119,7 +106,7 @@ CREATE TABLE action_logs (
 );
 
 -- Таблица для refresh токенов
-CREATE TABLE refresh_tokens (
+CREATE TABLE IF NOT EXISTS refresh_tokens (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER NOT NULL,
     token VARCHAR(255) NOT NULL UNIQUE,
@@ -129,9 +116,9 @@ CREATE TABLE refresh_tokens (
 );
 
 -- Индексы для оптимизации запросов
-CREATE INDEX idx_ingredients_name ON ingredients(name);
-CREATE INDEX idx_dishes_name ON dishes(name);
-CREATE INDEX idx_dishes_created_by ON dishes(created_by);
-CREATE INDEX idx_action_logs_user ON action_logs(user_id);
-CREATE INDEX idx_refresh_tokens_user ON refresh_tokens(user_id);
-CREATE INDEX idx_refresh_tokens_token ON refresh_tokens(token);
+CREATE INDEX IF NOT EXISTS idx_ingredients_name ON ingredients(name);
+CREATE INDEX IF NOT EXISTS idx_dishes_name ON dishes(name);
+CREATE INDEX IF NOT EXISTS idx_dishes_created_by ON dishes(created_by);
+CREATE INDEX IF NOT EXISTS idx_action_logs_user ON action_logs(user_id);
+CREATE INDEX IF NOT EXISTS idx_refresh_tokens_user ON refresh_tokens(user_id);
+CREATE INDEX IF NOT EXISTS idx_refresh_tokens_token ON refresh_tokens(token);

@@ -1,0 +1,14 @@
+{
+  "name": "prokitchen-project",
+  "version": "0.1.0",
+  "private": true,
+  "engines": { "node": ">=22.20.0 <23", "npm": ">=10 <11" },
+  "packageManager": "npm@10.9.3",
+  "scripts": {
+    "setup": "node scripts/setup.cjs",
+    "dev": "node scripts/dev.cjs",
+    "check": "node scripts/check.cjs",
+    "test": "npm --prefix Back test -- --runInBand",
+    "build": "npm --prefix Front run build"
+  }
+}

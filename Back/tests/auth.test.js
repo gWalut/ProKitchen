@@ -162,6 +162,7 @@ describe('Auth API', () => {
 
             const response = await request(app)
                 .post('/api/v1/auth/logout')
+                .set('Authorization', `Bearer ${loginResponse.body.data.accessToken}`)
                 .send({
                     refreshToken: newRefreshToken
                 });

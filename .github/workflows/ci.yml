@@ -1,53 +1,42 @@
-name: CI/CD Pipeline
+name: Project checks
 
 on:
   push:
-    branches: [ "main", "master" ]
+    branches: [main, 'lab-*']
   pull_request:
-    branches: [ "main", "master" ]
+    branches: [main]
+
+permissions:
+  contents: read
 
 jobs:
-  build-and-test:
+  local-sqlite:
     runs-on: ubuntu-latest
-    
     steps:
-    - uses: actions/checkout@v3
-
-    - name: Set up Node.js
-      uses: actions/setup-node@v3
-      with:
-        node-version: '18'
-
-    - name: Install backend dependencies & test
-      working-directory: ./Back
-      run: |
-        npm ci
-        npm test
-
-    - name: Install frontend dependencies & lint/build
-      working-directory: ./Front
-      run: |
-        npm ci
-        npm run build --if-present
-        
-  docker-checks:
-    needs: build-and-test
-    runs-on: ubuntu-latest
-    
-    steps:
-    - uses: actions/checkout@v3
-    
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v2
-      
-    - name: Test Docker Compose build
-      run: docker-compose build
-      
-    - name: Test Docker Compose up (dry run basically)
-      run: docker-compose up -d
-      
-    - name: Check running containers
-      run: docker-compose ps
-      
-    - name: Shutdown
-      run: docker-compose down
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: |
+            Back/package-lock.json
+            Front/package-lock.json
+      - run: npm run setup
+      - run: npm test
+      - run: npm run check
+      - run: npm run build
+      - name: Check combined startup
+        shell: bash
+        run: |
+          setsid npm run dev > "$RUNNER_TEMP/prokitchen-startup.log" 2>&1 &
+          lab_dev_pid=$!
+          trap 'kill -- -"$lab_dev_pid" 2>/dev/null || true' EXIT
+          for lab_attempt in {1..30}; do
+            if curl --fail --silent http://127.0.0.1:5173/api/v1/health > "$RUNNER_TEMP/prokitchen-health.json" && curl --fail --silent http://127.0.0.1:5173/ > "$RUNNER_TEMP/prokitchen-index.html"; then
+              cat "$RUNNER_TEMP/prokitchen-health.json"
+              exit 0
+            fi
+            sleep 1
+          done
+          cat "$RUNNER_TEMP/prokitchen-startup.log"
+          exit 1
