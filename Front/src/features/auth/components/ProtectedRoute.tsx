@@ -1,4 +1,5 @@
 import { ReactNode } from 'react';
+import { Spinner } from '@/shared/components/ui/Spinner';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { useRole, UserRole } from '../hooks/useRole';
@@ -25,8 +26,10 @@ export const ProtectedRoute = ({
     redirectTo = '/login',
     forbiddenRedirect = '/main'
 }: ProtectedRouteProps) => {
-    const { isAuthenticated } = useAuth();
+    const { isAuthenticated, initializing } = useAuth();
     const { canAccess } = useRole();
+
+    if (initializing) return <div className="flex h-screen items-center justify-center"><Spinner size="lg" /></div>;
 
     // Проверка аутентификации
     if (!isAuthenticated) {

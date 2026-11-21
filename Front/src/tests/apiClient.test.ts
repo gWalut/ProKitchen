@@ -1,40 +1,51 @@
-import { rest } from 'msw';
-import { server } from './mocks/server';
-import { apiClient } from '../api/apiClient';
+import { ApiClient } from '@/api/client';
 
-describe('apiClient', () => {
-    it('автоматически обновляет токен при 401 ошибке', async () => {
-        // Мокаем последовательность запросов
-        let requestCount = 0;
+const tokens = { accessToken: 'new-access', refreshToken: 'new-refresh' };
+const json = (data: unknown, status = 200) => new Response(JSON.stringify(data), { status, headers: { 'Content-Type': 'application/json' } });
 
-        // Первый запрос вернет 401, второй (после обновления токена) - успех
-        server.use(
-            rest.get('/api/protected', (req, res, ctx) => {
-                requestCount++;
-                if (requestCount === 1) {
-                    return res(ctx.status(401));
-                }
-                return res(ctx.json({ data: 'protected data' }));
-            })
-        );
+describe('ApiClient session recovery', () => {
+    const originalFetch = global.fetch;
+    let fetchMock: jest.Mock;
+    beforeEach(() => {
+        localStorage.setItem('accessToken', 'old-access');
+        localStorage.setItem('refreshToken', 'old-refresh');
+        fetchMock = jest.fn();
+        global.fetch = fetchMock;
+    });
+    afterEach(() => { global.fetch = originalFetch; });
 
-        // Запрос к защищенному эндпоинту
-        const response = await apiClient.get('/protected');
-
-        // Проверяем что данные получены после автоматического обновления токена
-        expect(response.data).toEqual({ data: 'protected data' });
-        expect(requestCount).toBe(2);
+    it('normalizes a JSON response after refreshing the access token', async () => {
+        fetchMock.mockResolvedValueOnce(json({}, 401)).mockResolvedValueOnce(json({ data: tokens }))
+            .mockResolvedValueOnce(json({ data: [{ id: 1 }], message: 'ok' }));
+        const result = await new ApiClient().fetch('/custom-dishes');
+        expect(result).toEqual({ data: [{ id: 1 }], message: 'ok' });
+        expect(fetchMock.mock.calls[2][1].headers.Authorization).toBe('Bearer new-access');
     });
 
-    it('возвращает ошибку если обновление токена не удалось', async () => {
-        // Мокаем неудачное обновление токена
-        server.use(
-            rest.post('/api/auth/refresh', (req, res, ctx) => {
-                return res(ctx.status(400));
-            })
-        );
+    it('preserves a PDF binary response after token refresh', async () => {
+        fetchMock.mockResolvedValueOnce(json({}, 401)).mockResolvedValueOnce(json({ data: tokens }))
+            .mockResolvedValueOnce(new Response(new Blob(['%PDF-1.4'], { type: 'application/pdf' }), { headers: { 'Content-Type': 'application/pdf' } }));
+        const result = await new ApiClient().fetch<Blob>('/custom-dishes/1/label', { responseType: 'blob' });
+        expect(result).toBeInstanceOf(Blob);
+        expect(result.type).toBe('application/pdf');
+    });
 
-        // Проверяем что запрос завершается с ошибкой
-        await expect(apiClient.get('/protected')).rejects.toThrow();
+    it('keeps the refreshed session if the retried request fails validation', async () => {
+        fetchMock.mockResolvedValueOnce(json({}, 401)).mockResolvedValueOnce(json({ data: tokens }))
+            .mockResolvedValueOnce(json({ message: 'Invalid weight' }, 400));
+        await expect(new ApiClient().fetch('/custom-dishes/1/label')).rejects.toThrow('Invalid weight');
+        expect(localStorage.getItem('refreshToken')).toBe('new-refresh');
+    });
+
+    it('clears tokens when refresh fails', async () => {
+        fetchMock.mockResolvedValueOnce(json({}, 401)).mockResolvedValueOnce(json({}, 401));
+        await expect(new ApiClient().fetch('/custom-dishes')).rejects.toThrow();
+        expect(localStorage.getItem('accessToken')).toBeNull();
+    });
+
+    it('recovers an unreadable access token before restoring the protected route', async () => {
+        fetchMock.mockResolvedValueOnce(json({ data: tokens }));
+        expect(await new ApiClient().initialize()).toBe(true);
+        expect(localStorage.getItem('accessToken')).toBe('new-access');
     });
 });

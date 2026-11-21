@@ -31,7 +31,7 @@ class IngredientsController {
             const ingredient = await ingredientsModel.getById(id);
 
             // Получаем связанные аллергены
-            const allergens = await allergensModel.getIngredientAllergens(id);
+            const allergens = await allergensModel.getForIngredient(id);
             ingredient.allergens = allergens;
 
             res.json({ data: ingredient });
@@ -51,7 +51,7 @@ class IngredientsController {
             // Добавляем аллергены если есть
             if (allergens && allergens.length > 0) {
                 for (const allergenId of allergens) {
-                    await allergensModel.addIngredientAllergen(id, allergenId);
+                    await allergensModel.addToIngredient(id, allergenId);
                 }
             }
 
@@ -76,8 +76,13 @@ class IngredientsController {
     async update(req, res, next) {
         try {
             const { id } = req.params;
-            const updateData = req.body;
+            const { allergens, ...updateData } = req.body;
 
+            if (allergens !== undefined) {
+                // Check the ingredient first; then replace its allergen links atomically.
+                await ingredientsModel.getById(id);
+                await allergensModel.setForIngredient(id, allergens);
+            }
             await ingredientsModel.update(id, updateData);
 
             // Логируем действие

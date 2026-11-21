@@ -1,11 +1,11 @@
-﻿import {
+import {
     createContext,
     useContext,
     useState,
     useCallback,
     ReactNode
 } from 'react';
-import { Toast, ToastProps } from '@/shared/components/ui/Toast';
+import { Toast } from '@/shared/components/ui/Toast';
 
 type Theme = 'light' | 'dark';
 

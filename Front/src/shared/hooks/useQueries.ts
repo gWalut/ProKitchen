@@ -1,6 +1,8 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
-import { apiClient } from '../api/apiClient';
+import { api } from '@/api/client';
+import { useAuth } from '@/features/auth/hooks/useAuth';
+import { ApiResponse, Ingredient } from '@/shared/types/api';
 
 // Ключи запросов
 export const queryKeys = {
@@ -11,17 +13,12 @@ export const queryKeys = {
 
 // Функции получения данных
 const fetchIngredients = async () => {
-    const { data } = await apiClient.get('/api/ingredients/list');
+    const { data } = await api.fetch<ApiResponse<Ingredient[]>>('/ingredients');
     return data;
 };
 
 const fetchFavorites = async () => {
-    const { data } = await apiClient.get('/api/favorites');
-    return data;
-};
-
-const fetchProfile = async () => {
-    const { data } = await apiClient.get('/api/profile');
+    const { data } = await api.fetch<ApiResponse<unknown[]>>('/custom-dishes');
     return data;
 };
 
@@ -30,6 +27,7 @@ export const usePrefetchData = () => {
     const queryClient = useQueryClient();
 
     useEffect(() => {
+        if (!localStorage.getItem('accessToken')) return;
         // Предзагрузка списка ингредиентов
         queryClient.prefetchQuery({
             queryKey: [queryKeys.ingredients],
@@ -38,7 +36,7 @@ export const usePrefetchData = () => {
         });
 
         // Если пользователь авторизован, предзагружаем избранное
-        if (localStorage.getItem('token')) {
+        if (localStorage.getItem('accessToken')) {
             queryClient.prefetchQuery({
                 queryKey: [queryKeys.favorites],
                 queryFn: fetchFavorites
@@ -66,8 +64,6 @@ export const useFavorites = () => {
 
 // Хук для получения профиля
 export const useProfile = () => {
-    return useQuery({
-        queryKey: [queryKeys.profile],
-        queryFn: fetchProfile
-    });
+    const { user, initializing } = useAuth();
+    return { data: user, isLoading: initializing };
 };

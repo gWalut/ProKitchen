@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Button } from '@/shared/components/Button';
 import { Input } from '@/shared/components/Input';
@@ -44,7 +44,7 @@ export const EditCustomDishPage = () => {
             setIsLoading(false);
         }
     }; const addIngredient = () => {
-        if (!newIngredient.name || newIngredient.weight <= 0) {
+        if (!newIngredient.name.trim() || newIngredient.weight <= 0 || newIngredient.pricePerUnit < 0) {
             alert('Заполните название и вес продукта');
             return;
         }
@@ -77,7 +77,7 @@ export const EditCustomDishPage = () => {
     };
 
     const saveDish = async () => {
-        if (!dishName || ingredients.length === 0) {
+        if (!dishName.trim() || !Number.isInteger(portions) || portions < 1 || ingredients.length === 0 || ingredients.some(ing => ing.weight <= 0 || ing.pricePerUnit < 0)) {
             alert('Введите название блюда и добавьте ингредиенты');
             return;
         }
@@ -89,7 +89,7 @@ export const EditCustomDishPage = () => {
             const { totalCost, costPerPortion } = calculateCosts();
 
             await customDishesApi.update(parseInt(id), {
-                name: dishName,
+                name: dishName.trim(),
                 portions: portions,
                 ingredients: ingredients,
                 cost_per_portion: costPerPortion,
@@ -139,7 +139,7 @@ export const EditCustomDishPage = () => {
     return (
         <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-4">
             <div className="max-w-4xl mx-auto">
-                <div className="flex justify-between items-center mb-6">
+                <div className="flex flex-wrap sm:flex-nowrap justify-between items-center gap-3 mb-6">
                     <button
                         onClick={() => navigate('/favorites')}
                         className="flex items-center gap-2 px-4 py-2 text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-all shadow-sm hover:shadow-md"
@@ -148,7 +148,7 @@ export const EditCustomDishPage = () => {
                         <span className="text-xl">←</span>
                         <span className="font-medium">Назад</span>
                     </button>
-                    <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Редактирование блюда</h1>
+                    <h1 className="order-last w-full text-center sm:order-none sm:w-auto text-2xl font-bold text-gray-900 dark:text-gray-100">Редактирование блюда</h1>
                     <button
                         onClick={deleteDish}
                         className="flex items-center gap-2 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"

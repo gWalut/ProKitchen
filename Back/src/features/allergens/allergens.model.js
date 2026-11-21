@@ -11,7 +11,7 @@ class AllergensModel extends BaseModel {
             'INSERT INTO allergens (name, description) VALUES (?, ?)',
             [data.name, data.description || null]
         );
-        return result.lastID;
+        return result.lastInsertRowid;
     }
 
     async update(id, data) {
@@ -48,6 +48,17 @@ class AllergensModel extends BaseModel {
             'INSERT INTO ingredient_allergens (ingredient_id, allergen_id) VALUES (?, ?)',
             [ingredientId, allergenId]
         );
+    }
+
+    async setForIngredient(ingredientId, allergenIds) {
+        const { ValidationError } = require('../../shared/utils/errors');
+        for (const id of allergenIds) {
+            if (!await this.getById(id)) throw new ValidationError('Аллерген не найден в справочнике');
+        }
+        await db.transaction(async () => {
+            await db.run('DELETE FROM ingredient_allergens WHERE ingredient_id = ?', [ingredientId]);
+            for (const id of new Set(allergenIds)) await this.addToIngredient(ingredientId, id);
+        });
     }
 
     async removeFromIngredient(ingredientId, allergenId) {

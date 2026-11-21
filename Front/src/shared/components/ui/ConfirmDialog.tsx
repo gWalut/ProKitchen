@@ -93,7 +93,7 @@ export const ConfirmDialog = ({
                                 <Button
                                     type="button"
                                     variant="primary"
-                                    className="sm:ml-3"
+                                    className={`sm:ml-3 ${variant === 'danger' ? '!bg-red-600 hover:!bg-red-700' : '!bg-amber-600 hover:!bg-amber-700'}`}
                                     onClick={onConfirm}
                                     ref={confirmButtonRef}
                                 >

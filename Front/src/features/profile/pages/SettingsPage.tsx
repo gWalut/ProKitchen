@@ -1,4 +1,4 @@
-﻿import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/shared/components/Button';
 import { authApi } from '@/api/endpoints';
@@ -12,7 +12,8 @@ export const SettingsPage = () => {
     const { theme, toggleTheme } = useTheme();
     const { isAdmin } = useRole();
     const { isGuest } = useGuest();
-    const [notifications, setNotifications] = useState(true);
+    const [notifications, setNotifications] = useState(() => localStorage.getItem('notifications') !== 'false');
+    useEffect(() => { localStorage.setItem('notifications', String(notifications)); }, [notifications]);
     const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
 
     // Показываем кнопку администрирования

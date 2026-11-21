@@ -1,37 +1,11 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import { IngredientAutocomplete } from '../components/IngredientAutocomplete';
-import { withRouter } from 'storybook-addon-react-router-v6';
-
+import { IngredientAutocomplete } from './IngredientAutocomplete';
 const meta = {
-    title: 'Components/IngredientAutocomplete',
-    component: IngredientAutocomplete,
-    decorators: [withRouter],
-    parameters: {
-        layout: 'centered',
-    },
-    tags: ['autodocs'],
+    title: 'Components/IngredientAutocomplete', component: IngredientAutocomplete,
+    parameters: { layout: 'centered' }, tags: ['autodocs'],
+    args: { value: '', onChange: () => {}, onSelect: () => {} }
 } satisfies Meta<typeof IngredientAutocomplete>;
-
 export default meta;
 type Story = StoryObj<typeof meta>;
-
-export const Default: Story = {
-    args: {
-        onSelect: (ingredient) => console.log('Selected:', ingredient),
-        placeholder: 'Поиск ингредиента...',
-    },
-};
-
-export const WithLabel: Story = {
-    args: {
-        ...Default.args,
-        label: 'Ингредиент',
-    },
-};
-
-export const Disabled: Story = {
-    args: {
-        ...Default.args,
-        disabled: true,
-    },
-};
+export const Default: Story = {};
+export const WithValue: Story = { args: { value: 'Картофель' } };

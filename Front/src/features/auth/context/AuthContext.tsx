@@ -1,4 +1,4 @@
-﻿import { createContext, useContext, useReducer, ReactNode, useEffect } from 'react';
+import { createContext, useContext, useReducer, ReactNode, useEffect, useState } from 'react';
 import { authReducer, initialState, AuthState } from './authReducer';
 import { api, ApiClient } from '@/api/client';
 import { LoginRequest, RegisterRequest } from '@/shared/types/api';
@@ -8,12 +8,14 @@ interface AuthContextType extends AuthState {
     register: (data: RegisterRequest) => Promise<void>;
     logout: () => Promise<void>;
     refreshInProgress: boolean;
+    initializing: boolean;
 }
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const [state, dispatch] = useReducer(authReducer, initialState);
+    const [initializing, setInitializing] = useState(true);
 
     useEffect(() => {
         const initializeAuth = async () => {
@@ -50,7 +52,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             // Не вызываем AUTH_FAILURE, просто оставляем как есть
         };
 
-        initializeAuth();
+        initializeAuth().finally(() => setInitializing(false));
     }, []);
 
     const login = async (credentials: LoginRequest) => {
@@ -105,6 +107,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         <AuthContext.Provider
             value={{
                 ...state,
+                initializing,
                 login,
                 register,
                 logout,

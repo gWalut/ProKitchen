@@ -1,6 +1,3 @@
-import { format, parseISO } from 'date-fns';
-import { ru } from 'date-fns/locale';
-
 interface DateInputProps {
     label?: string;
     value: string;
@@ -18,25 +15,6 @@ export const DateInput = ({
     max,
     error
 }: DateInputProps) => {
-    // Преобразование даты для отображения в российском формате
-    const formatDisplayDate = (dateStr: string) => {
-        try {
-            return format(parseISO(dateStr), 'dd.MM.yyyy', { locale: ru });
-        } catch {
-            return '';
-        }
-    };
-
-    // Преобразование даты из российского формата в ISO
-    const parseDisplayDate = (displayDate: string) => {
-        try {
-            const [day, month, year] = displayDate.split('.');
-            return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
-        } catch {
-            return '';
-        }
-    };
-
     return (
         <div className="w-full">
             {label && (

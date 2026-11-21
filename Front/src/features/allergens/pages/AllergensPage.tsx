@@ -1,6 +1,7 @@
-﻿import { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Input } from '@/shared/components/Input';
+import { api } from '@/api/client';
 import { dishesApi } from '@/api/endpoints';
 import { useSEO } from '@/shared/hooks/useSEO';
 
@@ -43,27 +44,11 @@ export const AllergensPage = () => {
 
     const loadAllergens = async () => {
         try {
-            // Получаем все аллергены из базы данных (используем относительный путь для прокси)
-            const response = await fetch('/api/v1/allergens');
-            if (response.ok) {
-                const data = await response.json();
-                setAllAllergens(data.data || data || []);
-            }
+            const response = await api.fetch<{ data: Allergen[] }>('/allergens');
+            setAllAllergens(response.data);
         } catch (err) {
             console.error('Failed to load allergens:', err);
-            // Если API не работает, используем стандартный список
-            setAllAllergens([
-                { id: 1, name: 'Яйца' },
-                { id: 2, name: 'Молоко' },
-                { id: 3, name: 'Рыба' },
-                { id: 4, name: 'Морепродукты' },
-                { id: 5, name: 'Арахис' },
-                { id: 6, name: 'Орехи' },
-                { id: 7, name: 'Пшеница' },
-                { id: 8, name: 'Глютен' },
-                { id: 9, name: 'Соя' },
-                { id: 10, name: 'Кунжут' }
-            ]);
+            setError('Не удалось загрузить справочник аллергенов. Попробуйте обновить страницу.');
         }
     };
 
@@ -79,27 +64,10 @@ export const AllergensPage = () => {
             setSelectedDish(null);
             setDishAllergens([]);
 
-            // Используем новый API endpoint для поиска по названию (относительный путь для прокси)
-            const response = await fetch(
-                `/api/v1/dishes/search/by-name?name=${encodeURIComponent(searchQuery.trim())}`,
-                {
-                    headers: {
-                        'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
-                    }
-                }
+            const response = await api.fetch<{ data: { id: number; name: string; ingredients?: unknown[] } }>(
+                '/dishes/search/by-name', { params: { name: searchQuery.trim() } }
             );
-
-            if (response.status === 404) {
-                setError(`Блюдо "${searchQuery}" не найдено`);
-                return;
-            }
-
-            if (!response.ok) {
-                throw new Error('Ошибка при поиске блюда');
-            }
-
-            const data = await response.json();
-            const dish = data.data;
+            const dish = response.data;
 
             if (dish) {
                 await selectDish(dish);
@@ -108,14 +76,13 @@ export const AllergensPage = () => {
             }
         } catch (err) {
             console.error('Failed to search dishes:', err);
-            setError('Не удалось выполнить поиск. Проверьте подключение к серверу.');
+            setError(err instanceof Error ? err.message : 'Не удалось выполнить поиск.');
         } finally {
             setIsLoading(false);
         }
     };
 
     const selectDish = async (dish: any) => {
-        setSelectedDish(dish);
         setError('');
 
         try {
@@ -145,11 +112,13 @@ export const AllergensPage = () => {
                 }
             }
 
-            console.log('Найденные аллергены для блюда:', allergens);
+            setSelectedDish(dishWithIngredients);
             setDishAllergens(allergens);
         } catch (err) {
             console.error('Failed to get dish details:', err);
+            setSelectedDish(null);
             setDishAllergens([]);
+            setError('Не удалось получить состав блюда. Наличие аллергенов не проверено.');
         }
     };
 
@@ -217,6 +186,7 @@ export const AllergensPage = () => {
                             }
                         </p>
 
+                        {allAllergens.length === 0 && <p className="text-gray-600 dark:text-gray-400">Справочник аллергенов пока пуст. Наличие аллергенов не проверено.</p>}
                         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
                             {allAllergens.map((allergen) => {
                                 const hasAllergen = selectedDish && isAllergenPresent(allergen.name);
@@ -239,9 +209,9 @@ export const AllergensPage = () => {
                             })}
                         </div>
 
-                        {selectedDish && dishAllergens.length === 0 && (
+                        {selectedDish && allAllergens.length > 0 && dishAllergens.length === 0 && (
                             <p className="mt-4 text-center text-green-600 dark:text-green-400 font-medium">
-                                ✓ В этом блюде нет известных аллергенов
+                                В составе блюда не указаны аллергены. Сверьте состав и маркировку продуктов.
                             </p>
                         )}
                     </div>

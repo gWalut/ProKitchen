@@ -1,5 +1,5 @@
 import { screen, waitFor } from '@testing-library/react';
-import { LoginForm } from '../components/LoginForm';
+import { LoginForm } from '@/features/auth/components/LoginForm';
 import { renderWithProviders } from './utils';
 
 describe('LoginForm', () => {
@@ -18,8 +18,8 @@ describe('LoginForm', () => {
         await user.click(screen.getByRole('button', { name: /войти/i }));
 
         // Проверяем отображение ошибок
-        expect(await screen.findByText(/email обязателен/i)).toBeInTheDocument();
-        expect(await screen.findByText(/пароль обязателен/i)).toBeInTheDocument();
+        expect(await screen.findByText(/некорректный email/i)).toBeInTheDocument();
+        expect(await screen.findByText(/пароль должен содержать/i)).toBeInTheDocument();
 
         // Проверяем что форма не была отправлена
         expect(mockSubmit).not.toHaveBeenCalled();
@@ -54,8 +54,8 @@ describe('LoginForm', () => {
 
     it('отображает состояние загрузки при отправке', async () => {
         // Создаем промис для контроля асинхронной операции
-        let resolveSubmit: (value: unknown) => void;
-        const submitPromise = new Promise(resolve => {
+        let resolveSubmit!: () => void;
+        const submitPromise = new Promise<void>(resolve => {
             resolveSubmit = resolve;
         });
 
@@ -75,6 +75,6 @@ describe('LoginForm', () => {
         expect(screen.getByRole('button')).toBeDisabled();
 
         // Завершаем асинхронную операцию
-        resolveSubmit!(undefined);
+        resolveSubmit!();
     });
 });

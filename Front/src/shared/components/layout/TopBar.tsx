@@ -1,4 +1,4 @@
-﻿import { Link } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { Logo } from '@/shared/components/Logo';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import { Button } from '@/shared/components/ui/Button';
@@ -16,13 +16,13 @@ export const TopBar = () => {
 
                     <nav className="hidden md:flex space-x-8">
                         <Link
-                            to="/calculator"
+                            to="/calc"
                             className="text-gray-500 hover:text-gray-900 px-3 py-2 text-sm font-medium"
                         >
                             Калькулятор
                         </Link>
                         <Link
-                            to="/matrix"
+                            to="/allergens"
                             className="text-gray-500 hover:text-gray-900 px-3 py-2 text-sm font-medium"
                         >
                             Матрица

@@ -1,8 +1,9 @@
-﻿import { useState, lazy, Suspense } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/shared/components/Button';
 import { Input } from '@/shared/components/Input';
 import { customDishesApi } from '@/api/endpoints';
+import { useAuth } from '@/features/auth/hooks/useAuth';
 import { useSEO } from '@/shared/hooks/useSEO';
 
 // Lazy-load — загружается только когда пользователь видит результат
@@ -18,6 +19,7 @@ interface Ingredient {
 
 export const CalcPage = () => {
     const navigate = useNavigate();
+    const { isAuthenticated } = useAuth();
 
     useSEO({
         title: 'Калькулятор себестоимости блюд',
@@ -40,11 +42,15 @@ export const CalcPage = () => {
     const [portions, setPortions] = useState(1);
     const [ingredients, setIngredients] = useState<Ingredient[]>([]);
     const [calculated, setCalculated] = useState(false);
-    const [totalCost, setTotalCost] = useState(0);
-    const [costPerPortion, setCostPerPortion] = useState(0);
+    const totalCost = Math.round(ingredients.reduce((sum, ing) => sum + ing.pricePerUnit * ing.weight, 0) * 100) / 100;
+    const costPerPortion = totalCost / portions;
+    const [isSaving, setIsSaving] = useState(false);
+    const [savedDishId, setSavedDishId] = useState<number | null>(null);
     const [isFavorite, setIsFavorite] = useState(false);
     /** Последний выбранный ингредиент для виджета питательности */
     const [nutritionTarget, setNutritionTarget] = useState<string | null>(null);
+
+    useEffect(() => { setIsFavorite(false); }, [dishName, portions, ingredients]);
 
     // Категории продуктов
     const categories = [
@@ -191,7 +197,7 @@ export const CalcPage = () => {
     });
 
     const addIngredient = () => {
-        if (!newIngredient.name || newIngredient.weight <= 0) {
+        if (!newIngredient.name.trim() || newIngredient.pricePerUnit < 0 || newIngredient.weight <= 0) {
             alert('Заполните название и вес продукта');
             return;
         }
@@ -229,51 +235,27 @@ export const CalcPage = () => {
 
     const updateIngredient = (id: number, field: keyof Ingredient, value: string | number) => {
         setIngredients(ingredients.map(ing => ing.id === id ? { ...ing, [field]: value } : ing));
-        if (calculated) {
-            setTimeout(() => {
-                const updatedIngredients = ingredients.map(ing => ing.id === id ? { ...ing, [field]: value } : ing);
-                const baseCost = updatedIngredients.reduce((sum, ing) => sum + (ing.pricePerUnit * ing.weight), 0);
-                const perPortion = baseCost / portions;
-                const total = perPortion * portions;
-
-                setCostPerPortion(perPortion);
-                setTotalCost(total);
-            }, 0);
-        }
     };
 
     const calculate = () => {
-        if (!dishName.trim()) {
-            alert('Введите название блюда');
+        if (!dishName.trim() || ingredients.length === 0 || ingredients.some(ing => ing.weight <= 0)) {
+            alert('Введите название блюда и положительное количество каждого ингредиента');
             return;
         }
-
-        // Общая стоимость всех ингредиентов (базовая стоимость)
-        const baseCost = ingredients.reduce((sum, ing) => sum + (ing.pricePerUnit * ing.weight), 0);
-
-        // Стоимость за одну порцию
-        const perPortion = baseCost / portions;
-
-        // Итоговая стоимость = стоимость за порцию * количество порций
-        const total = perPortion * portions;
-
-        setCostPerPortion(perPortion);
-        setTotalCost(total);
         setCalculated(true);
     };
 
-    // Функция для обновления количества порций
-    const handlePortionsChange = (newPortions: number) => {
-        const validPortions = newPortions > 0 ? newPortions : 1;
-        setPortions(validPortions);
-
-        if (calculated && costPerPortion > 0) {
-            setTotalCost(costPerPortion * validPortions);
-        }
+    const handlePortionsChange = (value: number) => {
+        setPortions(Number.isFinite(value) ? Math.max(1, Math.floor(value)) : 1);
     };
 
     const saveDish = async () => {
-        if (!dishName || ingredients.length === 0) {
+        if (isSaving) return;
+        if (!isAuthenticated) {
+            alert('Для сохранения блюда войдите в аккаунт');
+            return;
+        }
+        if (!dishName.trim() || ingredients.length === 0 || ingredients.some(ing => ing.weight <= 0)) {
             alert('Введите название блюда и добавьте ингредиенты');
             return;
         }
@@ -284,9 +266,9 @@ export const CalcPage = () => {
         }
 
         try {
-            // Сохраняем блюдо в таблицу custom_dishes
-            await customDishesApi.create({
-                name: dishName,
+            setIsSaving(true);
+            const data = {
+                name: dishName.trim(),
                 description: `Создано в калькуляторе себестоимости`,
                 portions: portions,
                 ingredients: ingredients.map(ing => ({
@@ -297,20 +279,26 @@ export const CalcPage = () => {
                 })),
                 cost_per_portion: costPerPortion,
                 total_cost: totalCost
-            });
+            };
+            const response = savedDishId
+                ? await customDishesApi.update(savedDishId, data)
+                : await customDishesApi.create(data);
+            setSavedDishId(response.data.id);
 
             setIsFavorite(true);
             alert('Блюдо сохранено в избранное!');
         } catch (error: any) {
             console.error('Save dish error:', error);
             alert(error?.message || 'Ошибка при сохранении блюда');
+        } finally {
+            setIsSaving(false);
         }
     };
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 p-4">
             <div className="max-w-4xl mx-auto">
-                <div className="flex justify-between items-center mb-8">
+                <div className="flex flex-wrap sm:flex-nowrap justify-between items-center gap-3 mb-8">
                     <button
                         onClick={() => navigate('/main')}
                         className="group flex items-center gap-2 px-5 py-3 text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl hover:border-brand-400 dark:hover:border-brand-500 transition-all shadow-lg hover:shadow-xl hover:scale-105 active:scale-95"
@@ -319,7 +307,7 @@ export const CalcPage = () => {
                         <span className="text-xl transition-transform group-hover:-translate-x-1">←</span>
                         <span className="font-semibold">Назад</span>
                     </button>
-                    <h1 className="text-3xl font-extrabold bg-gradient-to-r from-brand-600 to-purple-600 dark:from-brand-400 dark:to-purple-400 bg-clip-text text-transparent">
+                    <h1 className="order-last w-full text-center sm:order-none sm:w-auto text-2xl sm:text-3xl font-extrabold bg-gradient-to-r from-brand-600 to-purple-600 dark:from-brand-400 dark:to-purple-400 bg-clip-text text-transparent">
                         💰 Калькулятор себестоимости
                     </h1>
                     <button
@@ -328,14 +316,15 @@ export const CalcPage = () => {
                             ? 'bg-gradient-to-r from-yellow-400 to-orange-400 text-white cursor-not-allowed'
                             : 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:border-yellow-400 dark:hover:border-yellow-500 text-gray-700 dark:text-gray-200 hover:scale-105 active:scale-95'
                             }`}
-                        disabled={isFavorite}
+                        disabled={isFavorite || isSaving}
+                        aria-label={isSaving ? 'Сохранение блюда' : isFavorite ? 'Уже в избранном' : 'Добавить в избранное'}
                         title={isFavorite ? 'Уже в избранном' : 'Добавить в избранное'}
                     >
                         <span className="text-2xl">{isFavorite ? '⭐' : '☆'}</span>
                     </button>
                 </div>
 
-                <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl rounded-2xl shadow-2xl border border-gray-200/50 dark:border-gray-700/50 p-8 space-y-6">
+                <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl rounded-2xl shadow-2xl border border-gray-200/50 dark:border-gray-700/50 p-4 sm:p-8 space-y-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -371,7 +360,7 @@ export const CalcPage = () => {
                                     <thead className="bg-gradient-to-r from-brand-50 to-purple-50 dark:from-brand-900/20 dark:to-purple-900/20">
                                         <tr className="border-b-2 border-gray-200 dark:border-gray-600">
                                             <th className="text-left py-3 px-4 text-sm font-bold text-gray-700 dark:text-gray-300">Название</th>
-                                            <th className="text-left py-3 px-4 text-sm font-bold text-gray-700 dark:text-gray-300">Вес (г)</th>
+                                            <th className="text-left py-3 px-4 text-sm font-bold text-gray-700 dark:text-gray-300">Количество</th>
                                             <th className="text-left py-3 px-4 text-sm font-bold text-gray-700 dark:text-gray-300">Итого</th>
                                             <th className="w-12"></th>
                                         </tr>
@@ -383,10 +372,11 @@ export const CalcPage = () => {
                                                 <td className="py-3 px-4">
                                                     <Input
                                                         type="number"
-                                                        step="1"
+                                                        aria-label={`Количество: ${ing.name} (${ing.unit})`}
+                                                        step={ing.unit === 'шт' ? '1' : '0.01'}
                                                         min="0"
                                                         value={ing.weight || ''}
-                                                        onChange={(e) => updateIngredient(ing.id, 'weight', Number(e.target.value) || 0)}
+                                                        onChange={(e) => updateIngredient(ing.id, 'weight', Math.max(0, Number(e.target.value) || 0))}
                                                         className="min-w-[100px]"
                                                     />
                                                 </td>

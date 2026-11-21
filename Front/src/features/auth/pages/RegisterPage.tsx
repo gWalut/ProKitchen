@@ -1,5 +1,5 @@
-﻿import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Button } from '@/shared/components/Button';
 import { Input } from '@/shared/components/Input';
 import { authApi } from '@/api/endpoints';
@@ -7,7 +7,6 @@ import { useTheme } from '@/shared/contexts/ThemeContext';
 import { useSEO } from '@/shared/hooks/useSEO';
 
 export const RegisterPage = () => {
-    const navigate = useNavigate();
     const { theme, toggleTheme } = useTheme();
 
     useSEO({

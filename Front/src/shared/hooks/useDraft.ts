@@ -14,7 +14,7 @@ export const useDraft = <T>({
     debounceMs = 1000
 }: UseDraftOptions<T>) => {
     const storageKey = `draft_${key}_${userId}`;
-    const [data, setData] = useState<T>(() => {
+    const [data, setData] = useState<T | undefined>(() => {
         const saved = localStorage.getItem(storageKey);
         if (saved) {
             try {
