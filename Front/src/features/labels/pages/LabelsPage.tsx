@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/shared/components/Button';
 import { Input } from '@/shared/components/Input';
@@ -57,6 +57,9 @@ export const LabelsPage = () => {
                 allDishes.push(...customDishes.map(dish => ({ ...dish, isCustom: true })));
             }
 
+            if (favoritesResponse.status === 'rejected' || customDishesResponse.status === 'rejected') {
+                setError('Не удалось загрузить часть блюд. Обновите страницу и попробуйте снова.');
+            }
             setDishes(allDishes);
         } catch (err) {
             console.error('Failed to load dishes:', err);
@@ -67,8 +70,8 @@ export const LabelsPage = () => {
     };
 
     const handlePrint = async () => {
-        if (!selectedDishId || !weight || !manufactureDate || !shelfLife) {
-            setError('Заполните все поля!');
+        if (!selectedDishId || !manufactureDate || !Number.isInteger(Number(weight)) || Number(weight) <= 0 || !Number.isInteger(Number(shelfLife)) || Number(shelfLife) <= 0) {
+            setError('Выберите блюдо, дату и укажите положительные целые значения веса и срока годности.');
             return;
         }
 
@@ -196,7 +199,7 @@ export const LabelsPage = () => {
                                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Вес (г):</label>
                                 <Input
                                     type="number"
-                                    min="0"
+                                    min="1"
                                     step="1"
                                     value={weight}
                                     onChange={(e) => setWeight(e.target.value)}

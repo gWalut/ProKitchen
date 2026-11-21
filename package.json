@@ -9,6 +9,7 @@
     "dev": "node scripts/dev.cjs",
     "check": "node scripts/check.cjs",
     "test": "npm --prefix Back test -- --runInBand",
+    "test:smoke": "node scripts/browser-check.cjs",
     "build": "npm --prefix Front run build"
   }
 }

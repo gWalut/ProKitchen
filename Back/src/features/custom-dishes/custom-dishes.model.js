@@ -1,3 +1,4 @@
+const calculateDish = require('./calculate-dish');
 const BaseModel = require('../../shared/models/base.model');
 const { ValidationError, NotFoundError } = require('../../shared/utils/errors');
 
@@ -21,16 +22,13 @@ class CustomDishesModel extends BaseModel {
      * @param {number} data.total_cost - Общая стоимость
      */
     async create(data) {
-        const { user_id, name, description, portions, ingredients, cost_per_portion, total_cost } = data;
+        const { user_id, name, description, portions, ingredients, cost_per_portion, total_cost } = calculateDish(data);
 
         // Валидация
         if (!user_id || !name || !ingredients || ingredients.length === 0) {
             throw new ValidationError('Missing required fields: user_id, name, ingredients');
         }
 
-        if (!cost_per_portion || !total_cost) {
-            throw new ValidationError('Missing required fields: cost_per_portion, total_cost');
-        }
 
         // Преобразуем массив ингредиентов в JSON строку
         const ingredientsJson = JSON.stringify(ingredients);
@@ -92,9 +90,9 @@ class CustomDishesModel extends BaseModel {
      */
     async update(id, data) {
         // Проверяем существование
-        await this.getById(id);
-
-        const { name, description, portions, ingredients, cost_per_portion, total_cost } = data;
+        const existing = await this.getById(id);
+        const changes = Object.fromEntries(Object.entries(data).filter(([, value]) => value !== undefined));
+        const { name, description, portions, ingredients, cost_per_portion, total_cost } = calculateDish({ ...existing, ...changes });
 
         // Формируем запрос на обновление только переданных полей
         const updates = [];

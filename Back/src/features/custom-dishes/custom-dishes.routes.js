@@ -16,23 +16,23 @@ const getCustomDishOwnerId = async (req) => {
 // Схемы валидации
 const ingredientSchema = Joi.object({
     id: Joi.number().integer().optional(),
-    name: Joi.string().required(),
-    weight: Joi.number().min(0).required(),
+    name: Joi.string().trim().required(),
+    weight: Joi.number().positive().required(),
     unit: Joi.string().required(),
     pricePerUnit: Joi.number().min(0).required()
 });
 
 const createCustomDishSchema = Joi.object({
-    name: Joi.string().min(1).max(255).required(),
+    name: Joi.string().trim().min(1).max(255).required(),
     description: Joi.string().allow('').optional(),
     portions: Joi.number().integer().min(1).default(1),
     ingredients: Joi.array().items(ingredientSchema).min(1).required(),
-    cost_per_portion: Joi.number().min(0).required(),
-    total_cost: Joi.number().min(0).required()
+    cost_per_portion: Joi.number().min(0).optional(),
+    total_cost: Joi.number().min(0).optional()
 });
 
 const updateCustomDishSchema = Joi.object({
-    name: Joi.string().min(1).max(255).optional(),
+    name: Joi.string().trim().min(1).max(255).optional(),
     description: Joi.string().allow('').optional(),
     portions: Joi.number().integer().min(1).optional(),
     ingredients: Joi.array().items(ingredientSchema).min(1).optional(),

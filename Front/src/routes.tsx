@@ -49,7 +49,7 @@ export const AppRoutes = () => {
                     </ProtectedRoute>
                 } />
                 <Route path="/dishes/:id" element={<DishDetailPage />} />
-                <Route path="/custom-dishes/:id" element={<EditCustomDishPage />} />
+                <Route path="/custom-dishes/:id" element={<ProtectedRoute><EditCustomDishPage /></ProtectedRoute>} />
                 <Route path="/settings" element={<SettingsPage />} />
                 <Route path="/privacy" element={<PrivacyPolicyPage />} />
 

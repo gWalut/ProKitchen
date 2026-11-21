@@ -1,0 +1,145 @@
+import { test, expect } from '@playwright/test';
+import { readFile } from 'node:fs/promises';
+
+test('register, reload, calculate, save, edit, print, change password and delete', async ({ page }) => {
+    const errors: string[] = [];
+    page.on('pageerror', error => errors.push(error.message));
+    page.on('dialog', dialog => dialog.accept());
+    const email = `kitchen-${Date.now()}-${test.info().project.name}@example.com`;
+    const password = 'Kitchen-test-9274!';
+    await page.goto('/register');
+    await page.getByPlaceholder('example@mail.com').fill(email);
+    await page.getByPlaceholder('Минимум 8 символов').fill(password);
+    await page.getByPlaceholder('Повторите пароль').fill(password);
+    await page.locator('#accept-privacy').check();
+    await page.getByRole('button', { name: 'Зарегистрироваться', exact: true }).click();
+    await page.waitForURL('**/main');
+    await page.goto('/favorites');
+    await expect(page.getByRole('heading', { name: '⭐ Избранные блюда' })).toBeVisible();
+    await page.reload();
+    await expect(page.getByRole('heading', { name: '⭐ Избранные блюда' })).toBeVisible();
+
+    await page.goto('/calc');
+    await page.getByPlaceholder('Название блюда', { exact: true }).fill('Картофель для проверки');
+    await page.getByRole('button', { name: 'Добавить ингредиент...' }).click();
+    await page.getByRole('button', { name: /Картофель/ }).click();
+    await page.getByRole('spinbutton', { name: 'Количество: Картофель (г)' }).fill('200');
+    await page.getByRole('button', { name: 'Рассчитать', exact: true }).click();
+    await page.locator('input[type=number]').first().fill('2');
+    await expect(page.getByText('5.00 ₽', { exact: true })).toBeVisible();
+    await expect(page.getByText('10.00 ₽', { exact: true })).toHaveCount(2);
+    await page.getByRole('button', { name: 'Добавить в избранное', exact: true }).click();
+    await expect(page.getByRole('button', { name: 'Уже в избранном' })).toBeDisabled();
+    // Edits after saving must update the saved recipe rather than lock the button or duplicate it.
+    await page.getByRole('spinbutton', { name: 'Количество: Картофель (г)' }).fill('400');
+    await expect(page.getByText('20.00 ₽', { exact: true })).toHaveCount(2);
+    await page.getByRole('button', { name: 'Добавить в избранное', exact: true }).click();
+    await expect(page.getByRole('button', { name: 'Уже в избранном' })).toBeDisabled();
+    await page.goto('/favorites');
+    await expect(page.getByRole('heading', { name: 'Картофель для проверки' })).toHaveCount(1);
+    await page.getByRole('button', { name: /Просмотреть и редактировать/ }).click();
+    await page.waitForURL('**/custom-dishes/*');
+    await page.getByRole('spinbutton').first().fill('4');
+    await page.getByRole('button', { name: 'Сохранить изменения' }).click();
+    await page.waitForURL('**/favorites');
+
+    await page.goto('/labels');
+    await page.locator('select').selectOption({ label: 'Картофель для проверки' });
+    await page.getByPlaceholder('Введите вес в граммах').fill('400');
+    await page.locator('input[type=date]').fill('2026-11-21');
+    await page.getByPlaceholder('Введите срок годности в днях').fill('2');
+    // Force access-token refresh during a binary response.
+    await page.evaluate(() => localStorage.setItem('accessToken', 'expired-access-token'));
+    await page.reload();
+    await page.locator('select').selectOption({ label: 'Картофель для проверки' });
+    await page.getByPlaceholder('Введите вес в граммах').fill('400');
+    await page.locator('input[type=date]').fill('2026-11-21');
+    await page.getByPlaceholder('Введите срок годности в днях').fill('2');
+    let labelRequests = 0;
+    await page.route('**/api/v1/custom-dishes/*/label?**', async route => {
+        if (++labelRequests === 1) await route.fulfill({ status: 401, json: { message: 'Expired token' } });
+        else await route.continue();
+    });
+    const downloadPromise = page.waitForEvent('download');
+    await page.getByRole('button', { name: /Напечатать/ }).click();
+    const download = await downloadPromise;
+    expect(labelRequests).toBe(2);
+    expect((await readFile((await download.path())!)).subarray(0, 5).toString()).toBe('%PDF-');
+
+    await page.goto('/settings');
+    await page.getByRole('button', { name: 'Переключить уведомления' }).click();
+    await page.getByRole('button', { name: 'Переключить тему' }).click();
+    const dark = await page.locator('html').evaluate(el => el.classList.contains('dark'));
+    await page.reload();
+    await expect(page.getByText('Выключены', { exact: true })).toBeVisible();
+    expect(await page.locator('html').evaluate(el => el.classList.contains('dark'))).toBe(dark);
+    await page.getByRole('button', { name: 'Сменить пароль', exact: true }).click();
+    await page.getByPlaceholder('Введите текущий пароль').fill(password);
+    await page.getByPlaceholder('Минимум 8 символов').fill('Updated-test-9274!');
+    await page.getByPlaceholder('Повторите новый пароль').fill('Updated-test-9274!');
+    await page.locator('form').getByRole('button', { name: 'Сменить пароль', exact: true }).click();
+    await page.waitForURL('**/hello');
+    await page.goto('/login');
+    await page.locator('input[type=email]').fill(email);
+    await page.locator('input[type=password]').fill('Updated-test-9274!');
+    await page.getByRole('button', { name: 'Войти', exact: true }).click();
+    await page.waitForURL('**/main');
+    await page.goto('/favorites');
+    await page.getByRole('button', { name: /Просмотреть и редактировать/ }).click();
+    await page.getByRole('button', { name: /Удалить$/ }).click();
+    await page.waitForURL('**/favorites');
+    await expect(page.getByRole('heading', { name: 'Картофель для проверки' })).toHaveCount(0);
+    expect(errors).toEqual([]);
+});
+
+test('guest calculator, catalog allergen search and protected routes', async ({ page }) => {
+    await page.goto('/calc');
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    await page.getByPlaceholder('Название блюда', { exact: true }).fill('Бесплатный ингредиент');
+    await page.getByRole('button', { name: 'Добавить ингредиент...' }).click();
+    await page.getByPlaceholder('Название', { exact: true }).fill('Вода');
+    await page.getByPlaceholder('Вес (г)', { exact: true }).fill('200');
+    await page.getByRole('button', { name: /Добавить свой продукт/ }).click();
+    await page.getByRole('button', { name: 'Рассчитать', exact: true }).click();
+    await expect(page.getByText('0.00 ₽', { exact: true })).toHaveCount(3);
+    const dialog = page.waitForEvent('dialog').then(async message => {
+        expect(message.message()).toContain('войдите в аккаунт');
+        await message.accept();
+    });
+    await page.getByRole('button', { name: 'Добавить в избранное' }).click();
+    await dialog;
+    await page.goto('/allergens');
+    await page.getByPlaceholder('Например: Омлет').fill('омлет ТЕСТОВЫЙ');
+    await page.getByRole('button', { name: /Поиск/ }).click();
+    await expect(page.getByRole('heading', { name: 'Аллергены в блюде "Омлет тестовый"' })).toBeVisible();
+    await expect(page.getByText('Молоко', { exact: true }).locator('../..')).toHaveClass(/bg-red-100/);
+    await expect(page.getByText('Рыба', { exact: true }).locator('../..')).not.toHaveClass(/bg-red-100/);
+    await page.getByPlaceholder('Например: Омлет').fill('Такого блюда нет');
+    await page.getByRole('button', { name: /Поиск/ }).click();
+    await expect(page.getByText(/Блюдо.*не найдено/)).toBeVisible();
+    await expect(page.getByRole('heading', { name: /Аллергены в блюде/ })).toHaveCount(0);
+    await page.goto('/favorites');
+    await page.waitForURL('**/login');
+    await page.goto('/admin/users');
+    await page.waitForURL('**/login');
+});
+
+test('admin edits a user, changes their role, and deletes the test user', async ({ page }) => {
+    page.on('dialog', dialog => dialog.accept());
+    await page.goto('/login');
+    await page.locator('input[type=email]').fill('smoke-admin@example.com');
+    await page.locator('input[type=password]').fill('Smoke-fixture-9274!');
+    await page.getByRole('button', { name: 'Войти', exact: true }).click();
+    await page.waitForURL('**/main');
+    await page.goto('/admin/users');
+    const row = page.getByRole('row').filter({ hasText: `smoke-member-${test.info().project.name}@example.com` });
+    await expect(row).toBeVisible();
+    await row.getByTitle('Редактировать пользователя').click();
+    await page.getByPlaceholder('Введите имя пользователя').fill('Проверенный пользователь');
+    await page.getByRole('button', { name: /Сохранить/ }).click();
+    await expect(row.getByText('Проверенный пользователь')).toBeVisible();
+    await row.getByTitle('Изменить роль').click();
+    await expect(row.getByText('Администратор', { exact: true })).toBeVisible();
+    await row.getByTitle('Удалить пользователя').click();
+    await expect(row).toHaveCount(0);
+});

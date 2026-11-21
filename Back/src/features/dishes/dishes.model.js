@@ -130,10 +130,11 @@ class DishesModel extends BaseModel {
     }
 
     async getByExactName(name) {
-        return await db.get(
-            `SELECT * FROM dishes WHERE LOWER(TRIM(name)) = LOWER(TRIM(?))`,
-            [name]
-        );
+        // SQLite LOWER only folds ASCII; compare Russian names as Unicode too.
+        const normalized = name.trim().toLocaleLowerCase('ru');
+        const names = await db.all('SELECT id, name FROM dishes ORDER BY id');
+        const found = names.find(dish => dish.name.trim().toLocaleLowerCase('ru') === normalized);
+        return found ? this.getById(found.id) : null;
     }
 
     async getOwnerId(dishId) {

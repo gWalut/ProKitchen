@@ -70,16 +70,13 @@ class CustomDishesController {
                 throw new ValidationError('Name and ingredients are required');
             }
 
-            if (!cost_per_portion || !total_cost) {
-                throw new ValidationError('Cost per portion and total cost are required');
-            }
 
             // Создаем блюдо
             const dish = await customDishesModel.create({
                 user_id: userId,
                 name,
                 description: description || '',
-                portions: portions || 1,
+                portions: portions ?? 1,
                 ingredients,
                 cost_per_portion,
                 total_cost

@@ -1,4 +1,4 @@
-﻿import { ApiResponse, TokenResponse, LoginRequest, RegisterRequest } from '@/shared/types/api';
+import { ApiResponse, TokenResponse, LoginRequest, RegisterRequest } from '@/shared/types/api';
 
 class ApiError extends Error {
     constructor(public status: number, message: string) {
@@ -62,23 +62,14 @@ export class ApiClient {
             }
         }
 
-        const response = await fetch(url, { ...options, headers });
+        let response = await fetch(url, { ...options, headers });
 
-        if (response.status === 401 && this.refreshToken) {
-            try {
-                await this.refreshTokens();
-
-                // Повторяем запрос с новым токеном
-                headers.Authorization = `Bearer ${this.accessToken}`;
-                const retryResponse = await fetch(url, { ...options, headers });
-                if (!retryResponse.ok) {
-                    throw new ApiError(retryResponse.status, 'Ошибка запроса после обновления токена');
-                }
-                return retryResponse.json();
-            } catch (error) {
-                this.clearTokens();
-                throw error;
-            }
+        if (response.status === 401 && this.refreshToken && !['/auth/login', '/auth/register', '/auth/refresh'].includes(endpoint)) {
+            // Clear the session only if refresh itself fails. A failed retried
+            // application request (e.g. a validation error) must keep the session.
+            await this.refreshTokens();
+            headers.Authorization = `Bearer ${this.accessToken}`;
+            response = await fetch(url, { ...options, headers });
         }
 
         if (!response.ok) {
@@ -103,7 +94,7 @@ export class ApiClient {
 
         const data = await response.json();
         return {
-            data: data.data || data,
+            data: data.data ?? data,
             message: data.message,
         } as T;
     }
@@ -201,6 +192,18 @@ export class ApiClient {
     // Инициализация клиента
     async initialize() {
         this.loadTokensFromStorage();
+        if (!this.hasTokens()) return false;
+        let needsRefresh = true;
+        try {
+            const payload = JSON.parse(atob(this.accessToken!.split('.')[1]));
+            needsRefresh = typeof payload.exp !== 'number' || payload.exp * 1000 <= Date.now();
+        } catch {
+            // An unreadable access token can still be recovered with refresh.
+        }
+        if (needsRefresh) {
+            try { await this.refreshTokens(); }
+            catch { return false; }
+        }
         return this.hasTokens();
     }
 

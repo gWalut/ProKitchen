@@ -83,7 +83,7 @@ export const AdminUsersPage = () => {
             setActionLoading(userId);
             await adminApi.deleteUser(userId);
             toast.success('Пользователь удален');
-            loadUsers();
+            setUsers(current => current.filter(user => user.id !== userId));
         } catch (error: any) {
             toast.error(error.message || 'Ошибка удаления пользователя');
         } finally {

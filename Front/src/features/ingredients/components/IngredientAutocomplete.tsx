@@ -1,7 +1,8 @@
-﻿import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useDebounce } from '@/shared/hooks/useDebounce';
 import { Combobox } from '@headlessui/react';
 import { MagnifyingGlassIcon } from '@heroicons/react/24/outline';
+import { ingredientsService } from '../api/ingredientsService';
 import { cn } from '@/shared/utils/cn';
 
 interface Ingredient {
@@ -23,6 +24,7 @@ export const IngredientAutocomplete = ({
     onSelect
 }: IngredientAutocompleteProps) => {
     const [query, setQuery] = useState(value);
+    const [selected, setSelected] = useState<Ingredient | null>(null);
     const debouncedQuery = useDebounce(query, 300);
     const [ingredients, setIngredients] = useState<Ingredient[]>([]);
     const [isLoading, setIsLoading] = useState(false);
@@ -36,11 +38,7 @@ export const IngredientAutocomplete = ({
 
             setIsLoading(true);
             try {
-                const response = await fetch(
-                    `/api/ingredients?q=${encodeURIComponent(debouncedQuery)}`
-                );
-                const data = await response.json();
-                setIngredients(data.data);
+                setIngredients(await ingredientsService.search(debouncedQuery));
             } catch (error) {
                 console.error('Ошибка при поиске ингредиентов:', error);
                 setIngredients([]);
@@ -65,14 +63,10 @@ export const IngredientAutocomplete = ({
     return (
         <Combobox
             as="div"
-            value={query}
-            onChange={(value: string | Ingredient) => {
-                if (typeof value === 'string') {
-                    handleChange(value);
-                } else {
-                    handleChange(value.name);
-                    onSelect(value);
-                }
+            value={selected}
+            onChange={(value: Ingredient | null) => {
+                setSelected(value);
+                if (value) { handleChange(value.name); onSelect(value); }
             }}
             className="relative"
         >
@@ -85,9 +79,7 @@ export const IngredientAutocomplete = ({
                     className="h-11 w-full rounded-lg border border-gray-200 bg-white pl-10 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-primary-400 dark:border-dark-700 dark:bg-dark-800 dark:text-white"
                     placeholder="Поиск ингредиента..."
                     onChange={(e) => handleChange(e.target.value)}
-                    displayValue={(value: string | Ingredient) =>
-                        typeof value === 'string' ? value : value.name
-                    }
+                    displayValue={(value: Ingredient | null) => value?.name ?? query}
                 />
             </div>
 
